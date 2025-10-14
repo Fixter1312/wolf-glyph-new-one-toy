@@ -1,0 +1,11 @@
+*.iml
+.gradle/
+/build/
+/app/build/
+/local.properties
+/.idea/
+.cxx/
+/captures/
+/app/libs/*.jar
+/app/libs/*.aar
+!.keep
