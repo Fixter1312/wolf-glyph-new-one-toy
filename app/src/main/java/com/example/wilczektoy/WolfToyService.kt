@@ -172,6 +172,110 @@ class WolfToyService : Service() {
         }
         return bmp
     }
+}
+    private fun startRenderLoop() {
+        scope.launch {
+            var t = 0
+            var sinceDecay = 0
+            while (running.get()) {
+                if (sinceDecay >= 16) { tickDecay(); sinceDecay = 0 }
+                if (spi) { energia = (energia + 1).coerceAtMost(100); glod = (glod + 1).coerceAtMost(100) }
+
+                val blink = (t % 12 == 0)
+                val bmp = WolfSprites.renderFrame(
+                    blink = blink,
+                    sleep = spi,
+                    happy = szczescie() > 85,
+                    dirty = higiena < 40
+                )
+                pushBitmap(bmp)
+
+                t++; sinceDecay++
+                delay(250)
+            }
+        }
+    }
+
+    // ───── inicjalizacja SDK (szukamy różnych nazw klas) ──────────────────────
+    private fun tryInitGlyphSdk() {
+        fun findClass(vararg names: String): Class<*>? =
+            names.firstNotNullOfOrNull { n -> runCatching { Class.forName(n) }.getOrNull() }
+
+        try {
+            val gmClazz = findClass(
+                "com.nothing.glyph.matrix.GlyphMatrixManager",
+                "com.nothing.glyph.matrix.sdk.GlyphMatrixManager",
+                "com.nothing.glyph.GlyphMatrixManager"
+            ) ?: throw ClassNotFoundException("GlyphMatrixManager not found")
+            gm = gmClazz.getDeclaredConstructor().newInstance()
+
+            // init(callback) – w niektórych wersjach wymagane
+            runCatching {
+                val cbClazz = findClass(
+                    "com.nothing.glyph.matrix.GlyphMatrixManager\$Callback",
+                    "com.nothing.glyph.matrix.sdk.GlyphMatrixManager\$Callback"
+                )!!
+                val proxy = java.lang.reflect.Proxy.newProxyInstance(
+                    cbClazz.classLoader, arrayOf(cbClazz)
+                ) { _, _, _ -> null }
+                gmClazz.getMethod("init", cbClazz).invoke(gm, proxy)
+            }
+
+            // register() – niektóre wersje wymagają wywołania
+            runCatching { gmClazz.getMethod("register").invoke(gm) }
+
+            frameBuilderClazz = findClass(
+                "com.nothing.glyph.matrix.GlyphMatrixFrame\$Builder",
+                "com.nothing.glyph.matrix.sdk.GlyphMatrixFrame\$Builder"
+            )
+            objBuilderClazz = findClass(
+                "com.nothing.glyph.matrix.GlyphMatrixObject\$Builder",
+                "com.nothing.glyph.matrix.sdk.GlyphMatrixObject\$Builder"
+            )
+
+            gmSetFrame = gmClazz.methods.firstOrNull { it.name == "setMatrixFrame" }
+            frameAddTop = frameBuilderClazz?.methods?.firstOrNull { it.name == "addTop" }
+            frameBuild  = frameBuilderClazz?.methods?.firstOrNull { it.name == "build" }
+            objSetImage = objBuilderClazz?.methods?.firstOrNull { it.name == "setImageSource" }
+            objSetPos   = objBuilderClazz?.methods?.firstOrNull { it.name == "setPosition" }
+            objBuild    = objBuilderClazz?.methods?.firstOrNull { it.name == "build" }
+        } catch (_: Throwable) {
+            gm = null
+        }
+    }
+
+    // ───── wysyłka bitmapy do Glyph Matrix ────────────────────────────────────
+    private fun pushBitmap(bmp: Bitmap) {
+        val manager = gm ?: return   // jeśli SDK nie znalezione – pomijamy
+        try {
+            val objBuilder = objBuilderClazz!!.getDeclaredConstructor().newInstance()
+            objSetImage?.invoke(objBuilder, bmp)
+            objSetPos?.invoke(objBuilder, 0, 0)
+            val obj = objBuild?.invoke(objBuilder)
+
+            val frameBuilder = frameBuilderClazz!!.getDeclaredConstructor().newInstance()
+            frameAddTop?.invoke(frameBuilder, obj)
+            val frame = frameBuild?.invoke(frameBuilder)
+
+            gmSetFrame?.invoke(manager, frame)
+        } catch (_: Throwable) {
+            // ciche pominięcie pojedynczych niezgodności API
+        }
+    }
+
+    // bardzo jasny wzór testowy – powinien być widoczny natychmiast
+    private fun makeTestPattern(size: Int = 25): Bitmap {
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        val p = Paint().apply { style = Paint.Style.FILL }
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                p.color = if ((x + y) % 2 == 0) Color.WHITE else Color.BLACK
+                c.drawRect(x.toFloat(), y.toFloat(), (x+1).toFloat(), (y+1).toFloat(), p)
+            }
+        }
+        return bmp
+    }
 }            objSetPos    = objBuilderClazz!!.methods.firstOrNull { it.name == "setPosition" }
             objBuild     = objBuilderClazz!!.methods.firstOrNull { it.name == "build" }
         } catch (_: Throwable) { gm = null }
