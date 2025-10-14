@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         flatDir { dirs("app/libs") }
     }
 }
-rootProject.name = "WilczekGlyphToy"
+rootProject.name = "wolf-glyph-new-one-toy"
 include(":app")
