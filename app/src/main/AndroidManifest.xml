@@ -1,38 +1,31 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.wilczektoy">
 
-    <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+    <!-- (opcjonalnie) żeby uruchomić foreground service na Android 14+, ale nie jest wymagane -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:label="@string/app_name"
         android:supportsRtl="true">
 
+        <!-- REJESTRACJA GLYPH TOY -->
         <service
             android:name=".WolfToyService"
             android:exported="true">
             <intent-filter>
+                <!-- To właśnie widzi Nothing jako Toy -->
                 <action android:name="com.nothing.glyph.TOY" />
             </intent-filter>
 
+            <!-- Nazwa i podgląd w bibliotece Glyph Toys -->
             <meta-data
                 android:name="com.nothing.glyph.toy.name"
-                android:resource="@string/toy_name_wilczek" />
-
+                android:value="@string/app_name" />
             <meta-data
-                android:name="com.nothing.glyph.toy.image"
+                android:name="com.nothing.glyph.toy.preview"
                 android:resource="@drawable/img_toy_preview_wilczek" />
-
-            <meta-data
-                android:name="com.nothing.glyph.toy.summary"
-                android:resource="@string/toy_summary_wilczek" />
-
-            <meta-data
-                android:name="com.nothing.glyph.toy.longpress"
-                android:value="1" />
-
-            <meta-data
-                android:name="com.nothing.glyph.toy.aod_support"
-                android:value="1" />
         </service>
 
     </application>
