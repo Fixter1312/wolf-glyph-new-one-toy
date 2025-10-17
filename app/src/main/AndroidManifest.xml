@@ -1,31 +1,28 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.wilczektoy">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- (opcjonalnie) żeby uruchomić foreground service na Android 14+, ale nie jest wymagane -->
+    <!-- (Opcjonalnie) jeśli kiedyś uruchomisz serwis w trybie foreground -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="false"
-        android:label="@string/app_name"
+        android:label="Wilczek Glyph Toy"
         android:supportsRtl="true">
 
-        <!-- REJESTRACJA GLYPH TOY -->
+        <!-- Publiczny serwis widoczny dla zewnętrznych aplikacji (np. Glyph Toys) -->
         <service
             android:name=".WolfToyService"
+            android:enabled="true"
             android:exported="true">
+
+            <!-- Intent-filter nie jest zawsze wymagany, ale pomaga hostom,
+                 które skanują serwisy po akcjach. Akcja może być dowolnym,
+                 unikalnym stringiem Twojej aplikacji. -->
             <intent-filter>
-                <!-- To właśnie widzi Nothing jako Toy -->
-                <action android:name="com.nothing.glyph.TOY" />
+                <action android:name="com.example.wilczektoy.WOLF_TOY" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-            <!-- Nazwa i podgląd w bibliotece Glyph Toys -->
-            <meta-data
-                android:name="com.nothing.glyph.toy.name"
-                android:value="@string/app_name" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.preview"
-                android:resource="@drawable/img_toy_preview_wilczek" />
         </service>
 
     </application>
